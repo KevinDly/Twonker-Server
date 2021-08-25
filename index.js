@@ -13,8 +13,8 @@ const io = new Server(server, {
 });
 
 //var client = undefined;
-const uri =
-  "mongodb+srv://atlasTest:nkrtWPGxeLnJL2Cn@cluster0.gsxtp.mongodb.net/TwonkerDB?retryWrites=true&w=majority";
+const uri = "test";
+
 const testData = ["Hello", "how are you man?", "im good!"];
 const client = new MongoClient(uri);
 //Connect to database then connect sockets.
