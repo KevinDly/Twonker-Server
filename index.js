@@ -1,7 +1,6 @@
 const config = require("config");
 const express = require("express");
 const app = express();
-const { MongoClient } = require("mongodb");
 const http = require("http");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
@@ -12,11 +11,17 @@ const io = new Server(server, {
   },
 });
 
-//var client = undefined;
-const uri = "test";
+const { MongoClient } = require("mongodb");
+const username = config.get("mongodb.username");
+const password = config.get("mongodb.password");
+const clusterUrl = config.get("mongodb.clusterUrl");
 
-const testData = ["Hello", "how are you man?", "im good!"];
+const uri = `mongodb+srv://${username}:${password}@${clusterUrl}.gsxtp.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
+//const uri = `mongodb+srv://${username}:${password}@${clusterUrl}/?authMechanism=${authMechanism}`;
+
 const client = new MongoClient(uri);
+const testData = ["Hello", "how are you man?", "im good!"];
+//const client = new MongoClient(uri);
 //Connect to database then connect sockets.
 connectMongo()
   .catch(console.error)
@@ -24,7 +29,7 @@ connectMongo()
     connectSockets();
   });
 
-connectSockets();
+//connectSockets();
 //Connect to client
 async function connectMongo() {
   try {
@@ -47,28 +52,25 @@ function connectSockets() {
     //3a. In that function emit the data that was given from the previous function.
     socket.emit("initData", testData);
 
-
-
     //TODO: On send update both all listeners AND mongodb with the post that is recieved.
     //TODO: Prevent spam by putting user in list with last time sent.
     socket.on("recievedPost", (post) => {
       console.log("Recieved data: " + post);
       const currTime = Date.now();
-      console.log("Post recieved at " + milis);
+      console.log("Post recieved at " + currTime);
 
       //TODO: Add "newPost" emit event to web app
       //Emits post with time to all.
       var newPost = {
         content: post,
-        time: milis
-      }
+        time: currTime,
+      };
 
       //TODO: Replace with prod and env config
-      await client.db("TwonkerDB").collection("TestPosts").insertOne(newPost);
-      
+      client.db("TwonkerDB").collection("TestPosts").insertOne(newPost);
+
       io.emit("newPost", newPost);
 
-      
       //socket.emit("initData", testData);
     });
 
