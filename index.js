@@ -47,12 +47,29 @@ function connectSockets() {
     //3a. In that function emit the data that was given from the previous function.
     socket.emit("initData", testData);
 
+
+
     //TODO: On send update both all listeners AND mongodb with the post that is recieved.
     //TODO: Prevent spam by putting user in list with last time sent.
     socket.on("recievedPost", (post) => {
       console.log("Recieved data: " + post);
-      testData.push(post);
-      socket.emit("initData", testData);
+      const currTime = Date.now();
+      console.log("Post recieved at " + milis);
+
+      //TODO: Add "newPost" emit event to web app
+      //Emits post with time to all.
+      var newPost = {
+        content: post,
+        time: milis
+      }
+
+      //TODO: Replace with prod and env config
+      await client.db("TwonkerDB").collection("TestPosts").insertOne(newPost);
+      
+      io.emit("newPost", newPost);
+
+      
+      //socket.emit("initData", testData);
     });
 
     //If data isnt available for some reason emit a connection error instead
