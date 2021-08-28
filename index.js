@@ -39,6 +39,21 @@ async function connectMongo() {
   }
 }
 
+async function readInitialData() {
+  try {
+    const data = await client
+      .db("TwonkerDB")
+      .collection("TestPosts")
+      .find({})
+      .sort({ time: -1 })
+      .limit(5)
+      .toArray();
+    return data;
+  } catch (e) {
+    console.log(e);
+  }
+}
+
 //Connect sockets.
 function connectSockets() {
   io.on("connection", (socket) => {
@@ -46,14 +61,20 @@ function connectSockets() {
 
     //TODO: Grab mongodb data from database and then emit it via initData event.
 
+    //TODO: Replace "TwonkerDB" and "TestPosts" strings with config strings.
+    //TODO: Replace limit numbers with a configuration number.
+
     //1. Create cursor for each connection to database? https://docs.mongodb.com/manual/reference/method/cursor.forEach/
     //2. Grab appropriate list of data.
     //3. Use .then to put data into a new function.
     //3a. In that function emit the data that was given from the previous function.
-    socket.emit("initData", testData);
 
     //TODO: On send update both all listeners AND mongodb with the post that is recieved.
     //TODO: Prevent spam by putting user in list with last time sent.
+    readInitialData().then((data) => {
+      socket.emit("initData", data);
+    });
+
     socket.on("recievedPost", (post) => {
       console.log("Recieved data: " + post);
       const currTime = Date.now();
