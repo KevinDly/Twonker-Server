@@ -20,7 +20,9 @@ const uri = `mongodb+srv://${username}:${password}@${clusterUrl}.gsxtp.mongodb.n
 //const uri = `mongodb+srv://${username}:${password}@${clusterUrl}/?authMechanism=${authMechanism}`;
 
 const client = new MongoClient(uri);
-const testData = ["Hello", "how are you man?", "im good!"];
+const amtToUpdate = 10;
+const amtToStart = 10;
+
 //const client = new MongoClient(uri);
 //Connect to database then connect sockets.
 connectMongo()
@@ -46,7 +48,7 @@ async function readInitialData() {
       .collection("TestPosts")
       .find({})
       .sort({ time: -1 })
-      .limit(5)
+      .limit(amtToStart)
       .toArray();
     return data;
   } catch (e) {
@@ -54,25 +56,43 @@ async function readInitialData() {
   }
 }
 
+async function readAdditionalData(lastID, amtToRead) {
+  try {
+    const data = await client
+      .db("TwonkerDB")
+      .collection("TestPosts")
+      .find({
+        time: {
+          $lt: lastID,
+        },
+      })
+      .limit(amtToRead)
+      .toArray();
+    return data.reverse();
+  } catch (e) {
+    console.log(e);
+  }
+}
 //Connect sockets.
 function connectSockets() {
   io.on("connection", (socket) => {
     //Replace this with correct emit event for initial data transfer.
 
-    //TODO: Grab mongodb data from database and then emit it via initData event.
-
     //TODO: Replace "TwonkerDB" and "TestPosts" strings with config strings.
     //TODO: Replace limit numbers with a configuration number.
 
-    //1. Create cursor for each connection to database? https://docs.mongodb.com/manual/reference/method/cursor.forEach/
-    //2. Grab appropriate list of data.
-    //3. Use .then to put data into a new function.
-    //3a. In that function emit the data that was given from the previous function.
-
-    //TODO: On send update both all listeners AND mongodb with the post that is recieved.
     //TODO: Prevent spam by putting user in list with last time sent.
+    //TODO: Combine updateData and initData into one event, modify logic in web client.
     readInitialData().then((data) => {
       socket.emit("initData", data);
+    });
+
+    socket.on("clientListEnd", (lastID) => {
+      console.log("Updating list: " + lastID);
+      readAdditionalData(lastID, amtToUpdate).then((data) => {
+        console.log(data);
+        socket.emit("updateData", data);
+      });
     });
 
     socket.on("recievedPost", (post) => {
