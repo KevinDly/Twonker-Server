@@ -66,9 +66,10 @@ async function readAdditionalData(lastID, amtToRead) {
           $lt: lastID,
         },
       })
+      .sort({ time: -1 })
       .limit(amtToRead)
       .toArray();
-    return data.reverse();
+    return data;
   } catch (e) {
     console.log(e);
   }
@@ -87,6 +88,7 @@ function connectSockets() {
       socket.emit("initData", data);
     });
 
+    //TODO: Send an additional flag that tells the client to stop loading when all the content scrolled is gone.
     socket.on("clientListEnd", (lastID) => {
       console.log("Updating list: " + lastID);
       readAdditionalData(lastID, amtToUpdate).then((data) => {
